@@ -8,10 +8,10 @@ const app = express();
 app.disable('x-powered-by');
 app.use(helmet());
 
-// Path folder public
+// Folder public
 const publicPath = path.join(__dirname, 'public');
 
-// Sajikan file statis (JS, CSS, assets)
+// Sajikan file statis
 app.use(express.static(publicPath));
 
 // Semua route SPA diarahkan ke index.html
@@ -19,5 +19,4 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-// ❗ Jangan gunakan app.listen() di Vercel
 module.exports = app;

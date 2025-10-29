@@ -33,11 +33,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Static files
+// Path folder public
 const publicPath = path.join(__dirname, 'public');
+
+// Sajikan file statis (JS, CSS, assets)
 app.use(express.static(publicPath));
 
-// Contoh API endpoint
+// API endpoint
 app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from Vercel server!' });
 });
@@ -47,5 +49,5 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-// ❗Jangan gunakan app.listen() di Vercel
+// ❗ Jangan gunakan app.listen() di Vercel
 module.exports = app;

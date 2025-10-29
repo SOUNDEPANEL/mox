@@ -42,7 +42,7 @@ app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from Vercel server!' });
 });
 
-// Semua route diarahkan ke index.html
+// Semua route SPA diarahkan ke index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });

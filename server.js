@@ -1,4 +1,4 @@
-// server.js (improved)
+// server.js (untuk Vercel)
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
@@ -9,109 +9,60 @@ const fs = require('fs');
 
 const app = express();
 
-// Basic hardening
 app.disable('x-powered-by');
 
-// Helmet dengan CSP dasar — sesuaikan jika pakai CDN atau inline styles yang sering
+// Helmet dengan CSP dasar
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"], // tambahkan CDN jika perlu, contoh: "'self' https://cdn.jsdelivr.net"
-      styleSrc: ["'self'", "'unsafe-inline'"], // jika perlu 'unsafe-inline' untuk legacy
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"], // penting: API endpoint eksternal jika ada, masukkan di sini
+      connectSrc: ["'self'"],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     }
-  },
-  // tambahan header lain sudah otomatis oleh helmet
+  }
 }));
 
-// HSTS: hanya aktif di production (jangan aktifkan saat develop di http)
-if (process.env.NODE_ENV === 'production') {
-  app.use(helmet.hsts({
-    maxAge: 63072000, // 2 tahun
-    includeSubDomains: true,
-    preload: true
-  }));
-}
-
-// Rate limiter — sesuaikan nilai untuk production
+// Rate limiter
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 menit
+  windowMs: 1 * 60 * 1000,
   max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use(limiter);
 
-// CORS — jangan gunakan '*' di production, isi domain yang valid
+// CORS
 app.use(cors({
   origin: process.env.ALLOWED_ORIGIN || '*'
 }));
 
-// Middleware: blok request untuk file sensitif (.env, .git, .map)
+// Blokir file sensitif
 app.use((req, res, next) => {
-  const forbidden = [
-    /\.env$/i,
-    /\.git/i,
-    /\.map$/i,           // blok source maps supaya tidak mudah dibaca
-    /package-lock\.json$/i
-  ];
+  const forbidden = [/\.env$/i, /\.git/i, /\.map$/i, /package-lock\.json$/i];
   if (forbidden.some(rx => rx.test(req.url))) {
     return res.status(403).send('Forbidden');
   }
   next();
 });
 
-// Static files (public) — setHeaders: mencegah melayani .map dan menambah header
+// Static files
 const publicPath = path.join(__dirname, 'public');
-app.use(express.static(publicPath, {
-  index: 'index.html',
-  extensions: ['html'],
-  setHeaders: (res, filePath) => {
-    // jangan kirim source maps
-    if (filePath.endsWith('.map')) {
-      res.status(403).end();
-      return;
-    }
-    // tambahkan header tambahan
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    // cache control: production bisa long-cache, development no-cache
-    if (process.env.NODE_ENV === 'production') {
-      // static assets boleh di-cache lama
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    } else {
-      res.setHeader('Cache-Control', 'no-store');
-    }
-  }
-}));
+app.use(express.static(publicPath));
 
-// Contoh endpoint API — letakkan di sini semua logic sensitif
-// (misal kalkulasi atau panggilan 3rd party dengan API key)
+// Contoh API endpoint
 app.get('/api/do-work', async (req, res) => {
-  try {
-    // contoh: gunakan secret yang hanya ada di server
-    const secret = process.env.MY_SECRET_KEY || 'no-secret';
-    // lakukan proses/algoritma yang sensitif INI DI SERVER
-    const result = { ok: true, brief: "hasil yang aman" };
-
-    // jangan kirim secret ke client
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'server error' });
-  }
+  res.json({ ok: true, brief: "hasil dari server vercel" });
 });
 
-app.use((req, res, next) => {
+// Default: kirim index.html
+app.get('*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-
-// Jalankan server
-// Ekspor app agar dijalankan oleh Vercel
+// ❗JANGAN pakai app.listen di Vercel
 module.exports = app;
-

@@ -112,7 +112,6 @@ app.use((req, res, next) => {
 
 
 // Jalankan server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server berjalan di http://localhost:${PORT}`);
-});
+// Ekspor app agar dijalankan oleh Vercel
+module.exports = app;
+
